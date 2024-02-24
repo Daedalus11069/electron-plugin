@@ -22,34 +22,62 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const remote = __importStar(require("@electron/remote"));
 window.remote = remote;
-electron_1.ipcRenderer.on('log', (event, { level, message, context }) => {
-    if (level === 'error') {
+electron_1.contextBridge.exposeInMainWorld("electron", {
+    on(channel, listener) {
+        electron_1.ipcRenderer.on(channel, listener);
+        return this;
+    },
+    once(channel, listener) {
+        electron_1.ipcRenderer.once(channel, listener);
+        return this;
+    },
+    removeListener(channel, listener) {
+        electron_1.ipcRenderer.removeListener(channel, listener);
+        return this;
+    },
+    invoke(channel, ...params) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield electron_1.ipcRenderer.invoke(channel, ...params);
+        });
+    },
+});
+electron_1.ipcRenderer.on("log", (event, { level, message, context }) => {
+    if (level === "error") {
         console.error(`[${level}] ${message}`, context);
     }
-    else if (level === 'warn') {
+    else if (level === "warn") {
         console.warn(`[${level}] ${message}`, context);
     }
     else {
         console.log(`[${level}] ${message}`, context);
     }
 });
-electron_1.ipcRenderer.on('native-event', (event, data) => {
+electron_1.ipcRenderer.on("native-event", (event, data) => {
     if (!window.livewire) {
         return;
     }
-    window.livewire.components.components().forEach(component => {
+    window.livewire.components.components().forEach((component) => {
         if (Array.isArray(component.listeners)) {
-            component.listeners.forEach(event => {
-                if (event.startsWith('native')) {
+            component.listeners.forEach((event) => {
+                if (event.startsWith("native")) {
                     let event_parts = event.split(/(native:|native-)|:|,/);
-                    if (event_parts[1] == 'native:') {
-                        event_parts.splice(2, 0, 'private', undefined, 'nativephp', undefined);
+                    if (event_parts[1] == "native:") {
+                        event_parts.splice(2, 0, "private", undefined, "nativephp", undefined);
                     }
-                    let [s1, signature, channel_type, s2, channel, s3, event_name,] = event_parts;
+                    let [s1, signature, channel_type, s2, channel, s3, event_name] = event_parts;
                     if (data.event === event_name) {
                         window.livewire.emit(event, data.payload);
                     }
