@@ -3,37 +3,8 @@ import * as remote from "@electron/remote";
 
 // @ts-ignore
 window.remote = remote;
-
-interface ElectronBridge {
-  on(channel: string, listener: (...args: any[]) => void): this;
-  once(channel: string, listener: (...args: any[]) => void): this;
-  removeListener(channel: string, listener: (...args: any[]) => void): this;
-  invoke(channel: string, ...params: any[]): Promise<any>;
-}
-
-contextBridge.exposeInMainWorld("electron", {
-  on(channel: string, listener: (...args: any[]) => void): ElectronBridge {
-    ipcRenderer.on(channel, listener);
-    return this;
-  },
-
-  once(channel: string, listener: (...args: any[]) => void): ElectronBridge {
-    ipcRenderer.once(channel, listener);
-    return this;
-  },
-
-  removeListener(
-    channel: string,
-    listener: (...args: any[]) => void
-  ): ElectronBridge {
-    ipcRenderer.removeListener(channel, listener);
-    return this;
-  },
-
-  async invoke(channel: string, ...params: any[]) {
-    return await ipcRenderer.invoke(channel, ...params);
-  },
-});
+// @ts-ignore
+window.ipcRenderer = ipcRenderer;
 
 ipcRenderer.on("log", (event, { level, message, context }) => {
   if (level === "error") {
